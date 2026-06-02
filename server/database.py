@@ -86,3 +86,13 @@ class C2Database:
             cursor = conn.cursor()
             cursor.execute("UPDATE agents SET jitter=?, beacon_interval=? WHERE agent_id=?", (jitter, interval, agent_id))
             conn.commit()
+
+    def log_task_deployment(self, task_id: str, agent_id: str, name: str, code: str, s_type: str, s_val: str, duration: int):
+        """Logs the task initialization into history immediately when deployed by the operator."""
+        with sqlite3.connect(self.db_file) as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "INSERT INTO tasks VALUES (?, ?, ?, ?, 'Dispatched', '', ?, ?, ?)", 
+                (task_id, agent_id, name, code, s_type, s_val, duration)
+            )
+            conn.commit()
