@@ -1,0 +1,4 @@
+c2_endpoint: "http://192.168.1.50:8000/v2/gateway"
+shared_key: "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=" # 32-byte Base64 key
+beacon_interval: 20
+jitter: 5
