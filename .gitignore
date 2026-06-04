@@ -151,11 +151,13 @@ activemq-data/
 .env
 .envrc
 .venv
+.venv/
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+.python-version
 
 # Spyder project settings
 .spyderproject
@@ -203,8 +205,24 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
-# Ruff stuff:
+# Frontend runtime and build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Python runtime and test artifacts
+__pycache__/
+.pytest_cache/
+.mypy_cache/
 .ruff_cache/
+
+# Local databases and generated payloads
+*.db
+*.sqlite3
+*.sqlite3-journal
+
+# OS metadata
+.DS_Store
 
 # PyPI configuration file
 .pypirc
@@ -216,3 +234,5 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+data/

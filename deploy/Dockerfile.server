@@ -1,0 +1,27 @@
+FROM python:3.12-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential curl libpq-dev \
+    && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml uv.lock README.md ./
+COPY server ./server
+COPY implant ./implant
+COPY common ./common
+COPY frontend ./frontend
+
+RUN pip install --upgrade pip uv \
+    && uv sync --frozen --no-dev \
+    && cd frontend && npm ci && npm run build
+
+EXPOSE 8000
+
+CMD ["uv", "run", "python", "server/c2_server.py"]
