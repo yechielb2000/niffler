@@ -13,7 +13,7 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml uv.lock README.md ./
-COPY server ./server
+COPY backend ./backend
 COPY implant ./implant
 COPY common ./common
 COPY frontend ./frontend
@@ -24,4 +24,4 @@ RUN pip install --upgrade pip uv \
 
 EXPOSE 8000
 
-CMD ["uv", "run", "python", "server/c2_server.py"]
+CMD ["uv", "run", "uvicorn", "backend.app:app", "--host", "0.0.0.0", "--port", "8000"]
