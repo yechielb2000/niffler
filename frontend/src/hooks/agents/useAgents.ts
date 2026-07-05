@@ -36,6 +36,8 @@ export function useAgents() {
 export function useAgentDetails(agentId?: string) {
   const [agent, setAgent] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
+  const [workflows, setWorkflows] = useState<any[]>([]);
+  const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -43,9 +45,11 @@ export function useAgentDetails(agentId?: string) {
     if (!agentId) return;
     setLoading(true);
     getAgent(agentId)
-      .then((data: { agent?: any; tasks?: any[] }) => {
+      .then((data: { agent?: any; tasks?: any[]; workflows?: any[]; data?: any[] }) => {
         setAgent(data.agent ?? null);
         setTasks(data.tasks ?? []);
+        setWorkflows(data.workflows ?? []);
+        setData(data.data ?? []);
         setError('');
       })
       .catch(() => setError('Unable to load the agent details.'))
@@ -56,5 +60,5 @@ export function useAgentDetails(agentId?: string) {
     refresh();
   }, [agentId]);
 
-  return { agent, tasks, loading, error, refresh };
+  return { agent, tasks, workflows, data, loading, error, refresh };
 }

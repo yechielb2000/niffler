@@ -23,7 +23,7 @@ export async function listAgents() {
 }
 
 export async function getAgent(agentId: string) {
-  return request<{ agent: unknown; tasks: unknown[] }>(`/admin/agents/${agentId}`);
+  return request<{ agent: unknown; tasks: unknown[]; workflows: unknown[]; data: unknown[] }>(`/admin/agents/${agentId}`);
 }
 
 export async function queueTask(agentId: string, payload: { module_name: string; code: string; sched_type?: string; sched_val?: string; duration_sec?: number; }) {

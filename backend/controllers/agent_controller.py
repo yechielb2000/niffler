@@ -33,15 +33,19 @@ class AgentController:
         return {'status': 'success'}
 
     def queue_task(self, agent_id: str, module_name: str, code: str, sched_type: str = 'Immediate', sched_val: str = '0', duration_sec: int = 0) -> dict[str, str]:
-        task_id = str(uuid.uuid4())[:8]
+        task_id = str(uuid.uuid4())
         self.tasks.enqueue(task_id, agent_id, module_name, code, sched_type, sched_val, duration_sec)
         return {'status': 'Task queued', 'task_id': task_id}
 
     def list_agents(self) -> list[dict[str, Any]]:
         return self.agents.list_agents()
 
-    def get_agent(self, agent_id: str) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
-        return self.agents.get_agent(agent_id)
+    def get_agent(self, agent_id: str) -> tuple[dict[str, Any] | None, list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+        agent, _ = self.agents.get_agent(agent_id)
+        tasks = self.tasks.list_tasks(agent_id)
+        workflows = self.tasks.list_workflows(agent_id)
+        data = self.tasks.list_collected_data(agent_id)
+        return agent, tasks, workflows, data
 
     def update_config(self, agent_id: str, jitter: int, beacon_interval: int) -> dict[str, str]:
         self.agents.update_config(agent_id, jitter, beacon_interval)
@@ -50,3 +54,16 @@ class AgentController:
     def kill_agent(self, agent_id: str) -> dict[str, str]:
         self.agents.set_status(agent_id, 'Inactive')
         return {'status': 'Agent marked inactive'}
+
+    def create_workflow(self, agent_id: str, name: str, definition: dict[str, Any]) -> dict[str, Any]:
+        workflow_id = str(uuid.uuid4())
+        return self.tasks.create_workflow(workflow_id, agent_id, name, definition)
+
+    def list_workflows(self, agent_id: str) -> list[dict[str, Any]]:
+        return self.tasks.list_workflows(agent_id)
+
+    def store_collected_data(self, agent_id: str, task_id: str | None, workflow_id: str | None, data_type: str, schema_version: int, payload: dict[str, Any]) -> dict[str, Any]:
+        return self.tasks.store_collected_data(agent_id, task_id, workflow_id, data_type, schema_version, payload)
+
+    def list_collected_data(self, agent_id: str) -> list[dict[str, Any]]:
+        return self.tasks.list_collected_data(agent_id)

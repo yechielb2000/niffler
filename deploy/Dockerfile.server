@@ -17,6 +17,7 @@ COPY backend ./backend
 COPY implant ./implant
 COPY common ./common
 COPY frontend ./frontend
+COPY data ./data
 
 RUN pip install --upgrade pip uv \
     && uv sync --frozen --no-dev \

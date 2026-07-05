@@ -36,3 +36,5 @@ class AgentListResponse(BaseModel):
 class AgentDetailResponse(BaseModel):
     agent: dict | None
     tasks: list[dict]
+    workflows: list[dict]
+    data: list[dict]

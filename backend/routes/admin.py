@@ -40,10 +40,10 @@ class Module:
 
     @app.get("/admin/agents/{agent_id}", response_model=AgentDetailResponse, dependencies=[Depends(require_api_key)])
     def get_agent(agent_id: str, controller: AgentController = Depends(get_agent_controller)):
-        agent, tasks = controller.get_agent(agent_id)
+        agent, tasks, workflows, data = controller.get_agent(agent_id)
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
-        return {"agent": agent, "tasks": tasks}
+        return {"agent": agent, "tasks": tasks, "workflows": workflows, "data": data}
 
     @app.post("/admin/agents/{agent_id}/task", response_model=TaskQueuedResponse, dependencies=[Depends(require_api_key)])
     def queue_agent_task(agent_id: str, payload: QueueAgentTaskRequest, controller: AgentController = Depends(get_agent_controller)):

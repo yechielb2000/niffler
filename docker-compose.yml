@@ -12,7 +12,8 @@ services:
     build:
       context: .
       dockerfile: deploy/Dockerfile.server
-    command: uv run uvicorn backend.app:app --host 0.0.0.0 --port 8000
+    command: >
+      /bin/sh -c "uv run python -m backend.seed_mock_data --database-url $$DATABASE_URL --fixture data/mock_agents.json --reset && uv run uvicorn backend.app:app --host 0.0.0.0 --port 8000"
     ports:
       - "8000:8000"
     environment:
