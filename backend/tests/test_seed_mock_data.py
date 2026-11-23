@@ -3,7 +3,7 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
-from backend.models import Base, Agent, CollectedData, Task, Workflow
+from backend.models import Agent, Base, CollectedData, Task, Workflow
 from backend.seed_mock_data import seed_mock_data
 
 

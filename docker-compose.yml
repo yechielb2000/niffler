@@ -1,40 +1,33 @@
 services:
-  frontend:
-    build:
-      context: .
-      dockerfile: deploy/Dockerfile.frontend
-    ports:
-      - "3000:3000"
-    depends_on:
-      - server
-
   server:
     build:
       context: .
       dockerfile: deploy/Dockerfile.server
     command: >
-      /bin/sh -c "uv run python -m backend.seed_mock_data --database-url $$DATABASE_URL --fixture data/mock_agents.json --reset && uv run uvicorn backend.app:app --host 0.0.0.0 --port 8000"
+      uv run uvicorn backend.app:app --host 0.0.0.0 --port 8000
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/niffler
-      C2_ENDPOINT: http://localhost:8000/v2/gateway
-      SHARED_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
-      BEACON_INTERVAL: "20"
-      JITTER: "5"
+      DATABASE_URL: postgresql+psycopg://postgres:${POSTGRES_PASSWORD}@db:5432/niffler
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   db:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: niffler
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the environment}
+    expose:
+      - "5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d niffler"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
   pgdata:

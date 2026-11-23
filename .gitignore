@@ -236,3 +236,7 @@ __marimo__/
 .streamlit/secrets.toml
 
 data/
+!data/
+data/*
+!data/mock_agents.json
+!data/showcase_agent.json

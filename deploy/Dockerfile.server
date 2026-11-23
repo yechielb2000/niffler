@@ -14,11 +14,8 @@ RUN apt-get update \
 
 COPY pyproject.toml uv.lock README.md ./
 COPY backend ./backend
-COPY implant ./implant
-COPY common ./common
+COPY data/mock_agents.json ./data/mock_agents.json
 COPY frontend ./frontend
-COPY data ./data
-
 RUN pip install --upgrade pip uv \
     && uv sync --frozen --no-dev \
     && cd frontend && npm ci && npm run build

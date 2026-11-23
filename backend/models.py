@@ -1,53 +1,69 @@
-from sqlalchemy import JSON, Column, Integer, String, Text
-from sqlalchemy.orm import declarative_base
+from typing import Any
 
-Base = declarative_base()
+from sqlalchemy import JSON, Integer, String, Text
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+
+class Base(DeclarativeBase):
+    pass
 
 
 class Agent(Base):
     __tablename__ = "agents"
 
-    agent_id = Column(String, primary_key=True)
-    hostname = Column(String, nullable=True)
-    username = Column(String, nullable=True)
-    distribution = Column(String, nullable=True)
-    status = Column(String, nullable=True)
-    jitter = Column(Integer, nullable=True)
-    beacon_interval = Column(Integer, nullable=True)
+    agent_id: Mapped[str] = mapped_column(String, primary_key=True)
+    hostname: Mapped[str | None] = mapped_column(String, nullable=True)
+    username: Mapped[str | None] = mapped_column(String, nullable=True)
+    distribution: Mapped[str | None] = mapped_column(String, nullable=True)
+    status: Mapped[str | None] = mapped_column(String, nullable=True)
+    jitter: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    beacon_interval: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class Task(Base):
     __tablename__ = "tasks"
 
-    task_id = Column(String, primary_key=True)
-    agent_id = Column(String, nullable=True)
-    module_name = Column(String, nullable=True)
-    source_code = Column(Text, nullable=True)
-    status = Column(String, nullable=True)
-    output = Column(Text, nullable=True)
-    schedule_type = Column(String, nullable=True)
-    schedule_value = Column(String, nullable=True)
-    duration = Column(Integer, nullable=True)
+    task_id: Mapped[str] = mapped_column(String, primary_key=True)
+    agent_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    module_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    source_code: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str | None] = mapped_column(String, nullable=True)
+    output: Mapped[str | None] = mapped_column(Text, nullable=True)
+    schedule_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    schedule_value: Mapped[str | None] = mapped_column(String, nullable=True)
+    duration: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class SSHConnection(Base):
+    __tablename__ = "ssh_connections"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    agent_id: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
+    host: Mapped[str] = mapped_column(String, nullable=False)
+    port: Mapped[int] = mapped_column(Integer, nullable=False, default=22)
+    username: Mapped[str] = mapped_column(String, nullable=False)
+    credential_ref: Mapped[str | None] = mapped_column(String, nullable=True)
+    connected_at: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class Workflow(Base):
     __tablename__ = "workflows"
 
-    workflow_id = Column(String, primary_key=True)
-    agent_id = Column(String, nullable=True)
-    name = Column(String, nullable=True)
-    definition = Column(JSON, nullable=True)
-    version = Column(Integer, default=1)
+    workflow_id: Mapped[str] = mapped_column(String, primary_key=True)
+    agent_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    name: Mapped[str | None] = mapped_column(String, nullable=True)
+    definition: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    version: Mapped[int] = mapped_column(Integer, default=1)
 
 
 class CollectedData(Base):
     __tablename__ = "collected_data"
 
-    id = Column(Integer, primary_key=True)
-    agent_id = Column(String, nullable=True)
-    task_id = Column(String, nullable=True)
-    workflow_id = Column(String, nullable=True)
-    data_type = Column(String, nullable=True)
-    schema_version = Column(Integer, nullable=True)
-    payload = Column(JSON, nullable=True)
-    collected_at = Column(String, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    agent_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    task_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    workflow_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    data_type: Mapped[str | None] = mapped_column(String, nullable=True)
+    schema_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    payload: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    collected_at: Mapped[str | None] = mapped_column(String, nullable=True)

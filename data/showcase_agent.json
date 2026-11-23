@@ -1,0 +1,205 @@
+{
+  "agents": [
+    {
+      "agent_id": "showcase-all-datatypes",
+      "hostname": "showcase-linux-01",
+      "username": "demo-operator",
+      "distribution": "Ubuntu 24.04 LTS",
+      "status": "Active",
+      "jitter": 5,
+      "beacon_interval": 60,
+      "tasks": [
+        {
+          "task_id": "task-showcase-inventory",
+          "module_name": "full-inventory-demo",
+          "source_code": null,
+          "status": "Completed",
+          "output": "Synthetic showcase records for every data view",
+          "schedule_type": "manual",
+          "schedule_value": "on demand",
+          "duration": 4
+        }
+      ],
+      "workflows": [
+        {
+          "workflow_id": "workflow-showcase-inventory",
+          "name": "Full inventory showcase",
+          "definition": {
+            "steps": [
+              { "action": "Collect host telemetry", "module": "system-info" },
+              { "action": "Inspect network", "module": "network-inventory" },
+              { "action": "Review installed software", "module": "package-inventory" }
+            ]
+          },
+          "version": 1
+        }
+      ],
+      "collected_data": [
+        {
+          "data_type": "system",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": {
+            "info": {
+              "hostname": "showcase-linux-01",
+              "distribution": "Ubuntu 24.04 LTS",
+              "kernel": "6.8.0-demo",
+              "architecture": "x86_64",
+              "timezone": "Asia/Jerusalem",
+              "local_time": "2026-11-23 10:00:00 +02:00",
+              "country": "Israel (demo value)"
+            },
+            "cpu": { "model": "Demo 8-Core CPU", "cores": 8, "threads": 16, "usage_percent": 23 },
+            "memory": { "total_gb": 32, "used_gb": 12.8, "available_gb": 19.2, "usage_percent": 40 },
+            "uptime": { "seconds": 345600, "human": "4 days" },
+            "load": { "one_minute": 0.42, "five_minutes": 0.36, "fifteen_minutes": 0.31 }
+          }
+        },
+        {
+          "data_type": "network",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": {
+            "interfaces": ["lo", "enp0s3"],
+            "details": {
+              "lo": { "name": "lo", "state": "UP", "addresses": ["127.0.0.1/8", "::1/128"], "mac_address": "00:00:00:00:00:00", "mtu": 65536 },
+              "enp0s3": { "name": "enp0s3", "state": "UP", "addresses": ["192.168.50.20/24", "2001:db8:50::20/64"], "mac_address": "02:00:00:50:00:20", "mtu": 1500 }
+            },
+            "ip_list": ["192.168.50.20", "2001:db8:50::20"],
+            "topology": { "switch_name": "demo-switch-01", "nodes": [
+              { "ip": "192.168.50.21", "hostname": "demo-fileserver", "mac": "02:00:00:50:00:21", "interface": "enp0s3", "state": "REACHABLE", "kind": "Server" },
+              { "ip": "192.168.50.22", "hostname": "demo-workstation", "mac": "02:00:00:50:00:22", "interface": "enp0s3", "state": "STALE", "kind": "Workstation" }
+            ] },
+            "arp_table": [
+              { "ip": "192.168.50.1", "hostname": "demo-gateway", "mac": "02:00:00:50:00:01", "interface": "enp0s3", "state": "REACHABLE", "kind": "Gateway" },
+              { "ip": "192.168.50.21", "hostname": "demo-fileserver", "mac": "02:00:00:50:00:21", "interface": "enp0s3", "state": "REACHABLE", "kind": "Server" },
+              { "ip": "192.168.50.22", "hostname": "demo-workstation", "mac": "02:00:00:50:00:22", "interface": "enp0s3", "state": "STALE", "kind": "Workstation" }
+            ],
+            "routes": [
+              { "destination": "default", "gateway": "192.168.50.1", "interface": "enp0s3", "protocol": "static", "metric": 100 },
+              { "destination": "192.168.50.0/24", "interface": "enp0s3", "protocol": "kernel", "metric": 100 }
+            ],
+            "firewall": { "policies": { "INPUT policy": "DROP", "FORWARD policy": "DROP", "OUTPUT policy": "ACCEPT" }, "rules": [
+              { "chain": "INPUT", "target": "ACCEPT", "protocol": "tcp", "source": "192.168.50.0/24", "destination": "0.0.0.0/0", "ports": "22", "raw": "allow SSH from LAN" },
+              { "chain": "INPUT", "target": "ACCEPT", "protocol": "established", "source": "any", "destination": "any", "ports": "any", "raw": "allow established traffic" }
+            ] },
+            "listeners": [
+              { "protocol": "tcp", "local_address": "0.0.0.0", "port": 22, "process": "sshd", "state": "LISTEN", "remote_address": "*" },
+              { "protocol": "tcp", "local_address": "127.0.0.1", "port": 5432, "process": "postgres", "state": "LISTEN", "remote_address": "localhost" },
+              { "protocol": "tcp", "local_address": "0.0.0.0", "port": 8080, "process": "demo-api", "state": "LISTEN", "remote_address": "*" }
+            ],
+            "resolv_conf": "nameserver 192.168.50.1\nnameserver 1.1.1.1\nsearch demo.internal example.test",
+            "hosts_file": "127.0.0.1 localhost\n192.168.50.21 demo-fileserver demo-fileserver.example.test",
+            "dhcp_server": "192.168.50.1",
+            "dhcp": { "interface": "enp0s3", "server": "192.168.50.1", "lease_seconds": 86400, "gateway": "192.168.50.1", "dns": ["192.168.50.1", "1.1.1.1"] },
+            "dhcp_leases": [
+              { "ip": "192.168.50.20", "mac": "02:00:00:50:00:20", "hostname": "showcase-linux-01", "expires": "2026-11-24T08:00:00Z" },
+              { "ip": "192.168.50.21", "mac": "02:00:00:50:00:21", "hostname": "demo-fileserver", "expires": "2026-11-24T07:45:00Z" }
+            ]
+          }
+        },
+        {
+          "data_type": "packages",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": { "package_count": 5, "packages": [
+            { "name": "openssh-server", "version": "1:9.6p1-3ubuntu13", "architecture": "amd64", "manager": "apt", "status": "installed", "description": "OpenSSH server" },
+            { "name": "nginx", "version": "1.24.0-2ubuntu7", "architecture": "amd64", "manager": "apt", "status": "installed" },
+            { "name": "postgresql", "version": "16.4", "architecture": "amd64", "manager": "apt", "status": "installed" },
+            { "name": "python3", "version": "3.12.3", "architecture": "amd64", "manager": "apt", "status": "installed" },
+            { "name": "curl", "version": "8.5.0", "architecture": "amd64", "manager": "apt", "status": "installed" }
+          ] }
+        },
+        {
+          "data_type": "config",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": { "files": [
+            { "path": "/etc/ssh/sshd_config", "format": "text", "owner": "root", "mode": "0600", "modified": "2026-11-20T13:30:00Z", "status": "baseline", "settings": { "PermitRootLogin": "no", "PasswordAuthentication": "no", "Port": 22 } },
+            { "path": "/etc/demo/app.yaml", "format": "yaml", "owner": "app", "mode": "0640", "modified": "2026-11-22T09:15:00Z", "status": "changed", "settings": { "environment": "demo", "log_level": "info", "api_token": "sample-secret-that-the-ui-must-redact" } }
+          ], "settings": { "network_mode": "private-demo", "update_channel": "stable" } }
+        },
+        {
+          "data_type": "processes",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": { "processes": [
+            { "pid": 1, "name": "systemd", "user": "root", "cpu_percent": 0.1, "memory_percent": 0.3, "status": "sleeping" },
+            { "pid": 742, "name": "sshd", "user": "root", "cpu_percent": 0.2, "memory_percent": 0.8, "status": "running" },
+            { "pid": 1054, "name": "postgres", "user": "postgres", "cpu_percent": 3.8, "memory_percent": 12.4, "status": "running" },
+            { "pid": 1412, "name": "demo-api", "user": "app", "cpu_percent": 2.1, "memory_percent": 7.2, "status": "running" }
+          ] }
+        },
+        {
+          "data_type": "services",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": { "services": [
+            { "name": "ssh.service", "active": true, "state": "running", "enabled": true },
+            { "name": "nginx.service", "active": true, "state": "running", "enabled": true },
+            { "name": "postgresql.service", "active": true, "state": "running", "enabled": true },
+            { "name": "demo-worker.service", "active": false, "state": "inactive", "enabled": true }
+          ] }
+        },
+        {
+          "data_type": "devices",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": { "block_devices": [
+            { "name": "vda", "size": 107374182400, "type": "disk", "mountpoint": null },
+            { "name": "vda1", "size": 107300000000, "type": "part", "mountpoint": "/" },
+            { "name": "vdb", "size": 536870912000, "type": "disk", "mountpoint": "/srv/data" }
+          ], "mounted": { "mount_points": [
+            { "device": "/dev/vda1", "mount_point": "/", "filesystem": "ext4", "total_gb": 100, "used_gb": 62, "percent": 62 },
+            { "device": "/dev/vdb", "mount_point": "/srv/data", "filesystem": "xfs", "total_gb": 500, "used_gb": 184, "percent": 37 },
+            { "device": "tmpfs", "mount_point": "/run", "filesystem": "tmpfs", "total_gb": 4, "used_gb": 1, "percent": 25 }
+          ] } }
+        },
+        {
+          "data_type": "users",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": { "users": [
+            { "name": "root", "uid": 0, "gid": 0, "home": "/root", "shell": "/bin/bash", "system": true },
+            { "name": "app", "uid": 1001, "gid": 1001, "home": "/home/app", "shell": "/bin/bash", "system": false },
+            { "name": "deploy", "uid": 1002, "gid": 1002, "home": "/home/deploy", "shell": "/usr/sbin/nologin", "system": false }
+          ], "groups": [
+            { "name": "root", "gid": 0, "members": ["root"] },
+            { "name": "sudo", "gid": 27, "members": ["deploy"] },
+            { "name": "app", "gid": 1001, "members": ["app", "deploy"] }
+          ] }
+        },
+        {
+          "data_type": "filesystem",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": { "root": { "path": "/", "owner": "root", "mode": "0755", "type": "directory" }, "entries": { "path": "/", "entries": [
+            { "name": "etc", "type": "directory", "size": 4096, "owner": "root", "mode": "0755" },
+            { "name": "home", "type": "directory", "size": 4096, "owner": "root", "mode": "0755" },
+            { "name": "opt", "type": "directory", "size": 4096, "owner": "root", "mode": "0755" },
+            { "name": "srv", "type": "directory", "size": 4096, "owner": "root", "mode": "0755" },
+            { "name": "var", "type": "directory", "size": 4096, "owner": "root", "mode": "0755" }
+          ] } }
+        },
+        {
+          "data_type": "environment",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": { "variables": { "LANG": "C.UTF-8", "HOME": "/home/app", "SHELL": "/bin/bash", "APP_ENV": "showcase", "DEPLOY_REGION": "eu-west-1", "API_TOKEN": "environment-demo-secret" } }
+        },
+        {
+          "data_type": "location",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": { "latitude": 31.7683, "longitude": 35.2137, "label": "Jerusalem (synthetic demo point)", "country": "Israel (demo value)", "timestamp": "2026-11-23T08:00:00Z" }
+        },
+        {
+          "data_type": "security-posture",
+          "schema_version": 1,
+          "collected_at": "2026-11-23T08:00:00Z",
+          "payload": { "assessment": "Synthetic demo only", "ssh_password_authentication": false, "pending_updates": 3, "notes": "Illustrates the additional inventory view; these are not live findings." }
+        }
+      ]
+    }
+  ]
+}
