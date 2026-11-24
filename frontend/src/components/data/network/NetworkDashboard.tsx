@@ -1,18 +1,11 @@
-import {
-  Chip,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material';
+import { Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 import { useMemo } from 'react';
 
 import type { CollectedRecord, JsonObject } from '../types';
 import { asObject, displayValue } from '../types';
 import { DataPanel, EmptyData, MetricCard } from '../shared/DataPanel';
+import { CodeValue } from '../../shared/CodeValue';
+import { StatusBadge } from '../../shared/StatusBadge';
 import {
   getDhcp,
   getDns,
@@ -108,16 +101,22 @@ export function NetworkDashboard({
               <TableBody>
                 {interfaces.map((iface, index) => (
                   <TableRow key={`${iface.name}-${index}`}>
-                    <TableCell>{iface.name}</TableCell>
                     <TableCell>
-                      <Chip
-                        size="small"
-                        label={iface.state || 'Unknown'}
-                        color={iface.state?.toLowerCase() === 'up' ? 'success' : 'default'}
-                      />
+                      <CodeValue value={iface.name} maxWidth={100} />
                     </TableCell>
-                    <TableCell>{iface.addresses.join(', ') || '—'}</TableCell>
-                    <TableCell>{iface.mac || '—'}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={iface.state} />
+                    </TableCell>
+                    <TableCell>
+                      {iface.addresses.length ? (
+                        <CodeValue value={iface.addresses.join(', ')} maxWidth={240} />
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {iface.mac ? <CodeValue value={iface.mac} maxWidth={150} /> : '—'}
+                    </TableCell>
                     <TableCell>{iface.mtu ?? '—'}</TableCell>
                   </TableRow>
                 ))}
@@ -148,9 +147,13 @@ export function NetworkDashboard({
               <TableBody>
                 {neighbors.map((node, index) => (
                   <TableRow key={`${node.ip}-${index}`}>
-                    <TableCell>{node.ip}</TableCell>
+                    <TableCell>
+                      <CodeValue value={node.ip} maxWidth={150} />
+                    </TableCell>
                     <TableCell>{node.hostname || '—'}</TableCell>
-                    <TableCell>{node.mac || '—'}</TableCell>
+                    <TableCell>
+                      {node.mac ? <CodeValue value={node.mac} maxWidth={150} /> : '—'}
+                    </TableCell>
                     <TableCell>{node.interface || '—'}</TableCell>
                     <TableCell>{node.state || '—'}</TableCell>
                   </TableRow>
@@ -177,8 +180,20 @@ export function NetworkDashboard({
               <TableBody>
                 {routes.map((route, index) => (
                   <TableRow key={`${route.destination}-${index}`}>
-                    <TableCell>{route.destination || '—'}</TableCell>
-                    <TableCell>{route.gateway || '—'}</TableCell>
+                    <TableCell>
+                      {route.destination ? (
+                        <CodeValue value={route.destination} maxWidth={180} />
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {route.gateway && route.gateway !== '—' ? (
+                        <CodeValue value={route.gateway} maxWidth={160} />
+                      ) : (
+                        route.gateway || '—'
+                      )}
+                    </TableCell>
                     <TableCell>{route.interface || '—'}</TableCell>
                     <TableCell>{route.metric ?? '—'}</TableCell>
                   </TableRow>
@@ -261,7 +276,9 @@ export function NetworkDashboard({
                     <TableCell>
                       {displayValue(item.local_address ?? item.address ?? item.local_addr)}
                     </TableCell>
-                    <TableCell>{displayValue(item.port ?? item.local_port)}</TableCell>
+                    <TableCell>
+                      <CodeValue value={displayValue(item.port ?? item.local_port)} maxWidth={80} />
+                    </TableCell>
                     <TableCell>{displayValue(item.process ?? item.program ?? item.name)}</TableCell>
                     <TableCell>{displayValue(item.state)}</TableCell>
                     <TableCell>

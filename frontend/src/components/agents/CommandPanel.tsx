@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { PresetCommand } from '../../api';
+import { StatusBadge } from '../shared/StatusBadge';
 
 interface Props {
   commands: PresetCommand[];
@@ -48,7 +49,7 @@ export function CommandPanel({
           </Typography>
         </Box>
         <Stack direction="row" spacing={1} alignItems="center">
-          {connected && host ? <Chip color="success" label={`Connected · ${host}`} /> : null}
+          {connected && host ? <StatusBadge status={`Connected · ${host}`} /> : null}
           {connected && onDisconnect ? (
             <Button color="inherit" onClick={onDisconnect}>
               Disconnect
@@ -78,9 +79,7 @@ export function CommandPanel({
             >
               <CardContent sx={{ flexGrow: 1 }}>
                 <Chip size="small" label={command.category} sx={{ mb: 1 }} />
-                <Typography variant="subtitle1" fontWeight={700}>
-                  {command.label}
-                </Typography>
+                <Typography variant="subtitle1">{command.label}</Typography>
                 <Typography variant="body2" color="text.secondary">
                   {command.description}
                 </Typography>

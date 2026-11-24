@@ -1,17 +1,9 @@
-import {
-  Chip,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  Typography,
-} from '@mui/material';
+import { Grid, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
 
 import type { CollectedRecord } from '../types';
 import { asArray, asObject, recordPayload } from '../types';
 import { DataPanel, EmptyData, MetricCard } from '../shared/DataPanel';
+import { StatusBadge } from '../../shared/StatusBadge';
 import { ConfigFileSchema, ConfigPayloadSchema, type ConfigFile } from './schema';
 
 const SECRET_KEY = /(password|passwd|secret|token|private.?key|credential|api.?key)/i;
@@ -87,15 +79,7 @@ export function ConfigDashboard({ records }: { records: CollectedRecord[] }) {
                     </TableCell>
                     <TableCell>{file.modified ?? '—'}</TableCell>
                     <TableCell>
-                      {file.status ? (
-                        <Chip
-                          size="small"
-                          label={file.status}
-                          color={flaggedStatus(file.status) ? 'warning' : 'default'}
-                        />
-                      ) : (
-                        '—'
-                      )}
+                      {file.status ? <StatusBadge status={file.status} /> : '—'}
                     </TableCell>
                     <TableCell>{Object.keys(file.settings ?? {}).length}</TableCell>
                   </TableRow>
@@ -147,10 +131,6 @@ export function ConfigDashboard({ records }: { records: CollectedRecord[] }) {
 function parseConfigFile(value: unknown): ConfigFile | null {
   const parsed = ConfigFileSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
-}
-
-function flaggedStatus(status: string) {
-  return ['changed', 'warning', 'error', 'non-default'].includes(status.toLowerCase());
 }
 
 function displayConfigValue(value: unknown): string {

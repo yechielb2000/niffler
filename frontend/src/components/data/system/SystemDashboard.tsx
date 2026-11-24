@@ -99,7 +99,7 @@ function Progress({
       <LinearProgress
         variant="determinate"
         value={Math.max(0, Math.min(100, value ?? 0))}
-        sx={{ mt: 0.75, height: 8, borderRadius: 8 }}
+        sx={{ mt: 0.75 }}
       />
     </div>
   );

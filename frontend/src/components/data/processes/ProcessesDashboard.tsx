@@ -1,9 +1,11 @@
-import { Chip, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
+import { Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material';
 import { z } from 'zod';
 
 import type { CollectedRecord } from '../types';
 import { asArray, recordPayload, sortNewest } from '../types';
 import { DataPanel, EmptyData, MetricCard } from '../shared/DataPanel';
+import { CodeValue } from '../../shared/CodeValue';
+import { StatusBadge } from '../../shared/StatusBadge';
 
 const ProcessSchema = z
   .object({
@@ -49,7 +51,13 @@ export function ProcessesDashboard({ records }: { records: CollectedRecord[] }) 
             <TableBody>
               {processes.map((process, index) => (
                 <TableRow key={`${process.pid ?? process.name}-${index}`}>
-                  <TableCell>{process.pid ?? '—'}</TableCell>
+                  <TableCell>
+                    {process.pid == null ? (
+                      '—'
+                    ) : (
+                      <CodeValue value={String(process.pid)} maxWidth={80} />
+                    )}
+                  </TableCell>
                   <TableCell>{process.name ?? 'Unnamed process'}</TableCell>
                   <TableCell>{process.user ?? '—'}</TableCell>
                   <TableCell>
@@ -59,7 +67,7 @@ export function ProcessesDashboard({ records }: { records: CollectedRecord[] }) 
                     {process.memory_percent == null ? '—' : `${process.memory_percent}%`}
                   </TableCell>
                   <TableCell>
-                    <Chip size="small" label={process.status ?? 'Unknown'} />
+                    <StatusBadge status={process.status} />
                   </TableCell>
                 </TableRow>
               ))}

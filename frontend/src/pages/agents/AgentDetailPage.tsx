@@ -1,32 +1,27 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Card,
-  Chip,
-  Grid,
-  Paper,
-  Stack,
-  Tab,
-  Tabs,
-  Typography,
-} from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Alert, Box, Button, Card, Chip, Grid, Stack, Tab, Tabs, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { DataExplorer } from '../../components/data/DataExplorer';
 import { CommandPanel } from '../../components/agents/CommandPanel';
 import { ConnectDialog } from '../../components/agents/ConnectDialog';
+import { ConnectivityTrend } from '../../components/agents/ConnectivityTrend';
 import { TasksTab } from '../../components/agents/TasksTab';
 import {
   connectAgent,
+  ConnectionAttempt,
+  ConnectionStatus,
   disconnectAgent,
   getConnection,
+  getConnectionAttempts,
   listCommands,
   PresetCommand,
   runPreset,
 } from '../../api';
 import { useAgentDetails } from '../../hooks/agents/useAgents';
+import { CodeValue } from '../../components/shared/CodeValue';
+import { formatDateTime, formatDuration, parseTimestamp } from '../../utils/datetime';
 
 type TabKey = 'commands' | 'activity' | 'data';
 export function AgentDetailPage() {
@@ -35,25 +30,37 @@ export function AgentDetailPage() {
   const { agent, tasks, data, loading, error, refresh } = useAgentDetails(agentId);
   const [tab, setTab] = useState<TabKey>('commands');
   const [connectOpen, setConnectOpen] = useState(false);
-  const [connection, setConnection] = useState<{
-    connected: boolean;
-    saved: boolean;
-    host?: string;
-    port?: number;
-    username?: string;
-  }>({ connected: false, saved: false });
+  const [connection, setConnection] = useState<ConnectionStatus>({
+    connected: false,
+    saved: false,
+  });
+  const [attempts, setAttempts] = useState<ConnectionAttempt[]>([]);
   const [commands, setCommands] = useState<PresetCommand[]>([]);
   const [commandError, setCommandError] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!agentId) return;
-    Promise.all([listCommands(), getConnection(agentId)])
-      .then(([catalog, saved]) => {
+    Promise.all([listCommands(), getConnection(agentId), getConnectionAttempts(agentId)])
+      .then(([catalog, saved, history]) => {
         setCommands(catalog.commands);
         setConnection(saved);
+        setAttempts(history.attempts);
       })
       .catch((err) => setCommandError(err.message));
+  }, [agentId]);
+
+  useEffect(() => {
+    if (!connection.connected) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, [connection.connected]);
+
+  const refreshAttempts = useCallback(async () => {
+    if (!agentId) return;
+    const history = await getConnectionAttempts(agentId);
+    setAttempts(history.attempts);
   }, [agentId]);
 
   if (loading)
@@ -71,8 +78,23 @@ export function AgentDetailPage() {
         <Button onClick={() => navigate('/')}>Back to inventory</Button>
       </Box>
     );
+
+  const lastSuccessfulAttemptAt = attempts.reduce<string | null>((latest, attempt) => {
+    if (!attempt.succeeded || !attempt.attempted_at) return latest;
+    const time = parseTimestamp(attempt.attempted_at);
+    if (time === null) return latest;
+    const previous = parseTimestamp(latest);
+    return previous === null || time > previous ? attempt.attempted_at : latest;
+  }, null);
+  const lastConnectionAt = connection.connected_at ?? lastSuccessfulAttemptAt;
+  const lastConnectionTime = parseTimestamp(lastConnectionAt);
+  const connectedForMs =
+    connection.connected && lastConnectionTime !== null
+      ? Math.max(0, now - lastConnectionTime)
+      : null;
+
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, minHeight: '100vh', maxWidth: 1440, mx: 'auto' }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, minHeight: '100vh', maxWidth: 1440, mx: 'auto' }}>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         justifyContent="space-between"
@@ -85,12 +107,12 @@ export function AgentDetailPage() {
             <Typography variant="overline" color="primary" sx={{ letterSpacing: '.14em' }}>
               System inventory
             </Typography>
-            <Typography variant="caption" color="text.disabled">/</Typography>
-            <Typography variant="caption" color="text.secondary">{agent.agent_id}</Typography>
+            <Typography variant="caption" color="text.disabled">
+              /
+            </Typography>
+            <CodeValue value={agent.agent_id} maxWidth={220} />
           </Stack>
-          <Typography variant="h4" sx={{ fontWeight: 700, letterSpacing: '-.025em' }}>
-            {agent.hostname}
-          </Typography>
+          <Typography variant="h4">{agent.hostname}</Typography>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1 }}>
             <Chip
               size="small"
@@ -103,35 +125,19 @@ export function AgentDetailPage() {
             </Typography>
           </Stack>
         </Box>
-        <Stack direction="row" spacing={1}>
-          <Button variant="outlined" onClick={() => navigate('/')}>All systems</Button>
-          <Button variant="contained" onClick={() => setConnectOpen(true)}>
-            {connection.connected ? 'Reconnect' : 'Connect'}
-          </Button>
-        </Stack>
+        <ConnectionSummary
+          connected={connection.connected}
+          connectedAt={lastConnectionAt}
+          durationMs={connectedForMs}
+          host={connection.host}
+        />
       </Stack>
+      <ConnectivityTrend records={data} connected={connection.connected} attempts={attempts} />
       {error ? (
         <Alert severity="error" sx={{ mb: 2 }}>
           {error}
         </Alert>
       ) : null}
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        {[
-          { label: 'Connection', value: connection.connected ? 'Connected' : 'Not connected', hint: connection.host ?? 'SSH connection required' },
-          { label: 'Data records', value: data.length, hint: 'Collected inventory records' },
-          { label: 'Activity', value: tasks.length, hint: 'Recorded task events' },
-        ].map((metric) => (
-          <Grid item xs={6} md={3} key={metric.label}>
-            <Paper variant="outlined" sx={{ p: 2, height: '100%', bgcolor: 'background.paper' }}>
-              <Typography variant="caption" color="text.secondary">{metric.label}</Typography>
-              <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 700 }}>{metric.value}</Typography>
-              <Typography variant="caption" color="text.secondary" noWrap display="block">
-                {metric.hint}
-              </Typography>
-            </Paper>
-          </Grid>
-        ))}
-      </Grid>
       <Grid container>
         <Grid item xs={12}>
           <Card variant="outlined" sx={{ overflow: 'hidden' }}>
@@ -144,7 +150,7 @@ export function AgentDetailPage() {
             >
               <Tab label="Command panel" value="commands" />
               <Tab label="Activity" value="activity" />
-              <Tab label={`Agent data (${data.length})`} value="data" />
+              <Tab label="Agent data" value="data" />
             </Tabs>
             <Box sx={{ p: { xs: 2, md: 3 }, minHeight: 360 }}>
               {tab === 'commands' ? (
@@ -157,8 +163,8 @@ export function AgentDetailPage() {
                   onConnect={() => setConnectOpen(true)}
                   onDisconnect={async () => {
                     if (!agentId) return;
-                    await disconnectAgent(agentId);
-                    setConnection((value) => ({ ...value, connected: false }));
+                    const status = await disconnectAgent(agentId);
+                    setConnection(status);
                   }}
                   onRun={async (id) => {
                     if (!agentId) return;
@@ -175,7 +181,9 @@ export function AgentDetailPage() {
                   }}
                 />
               ) : null}
-              {tab === 'activity' ? <TasksTab tasks={tasks} /> : null}
+              {tab === 'activity' ? (
+                <TasksTab tasks={tasks} records={data} attempts={attempts} />
+              ) : null}
               {tab === 'data' ? (
                 <DataExplorer data={data} hostname={agent.hostname ?? undefined} />
               ) : null}
@@ -190,18 +198,86 @@ export function AgentDetailPage() {
         onClose={() => setConnectOpen(false)}
         onConnect={async (details) => {
           if (!agentId) return;
-          await connectAgent(agentId, details);
-          setConnection({
-            connected: true,
-            saved: true,
-            host: details.host,
-            port: details.port,
-            username: details.username,
-          });
-          setConnectOpen(false);
-          setTab('commands');
+          try {
+            const status = await connectAgent(agentId, details);
+            setConnection(status);
+            setConnectOpen(false);
+            setTab('commands');
+          } finally {
+            await refreshAttempts().catch(() => undefined);
+          }
         }}
       />
+    </Box>
+  );
+}
+
+function ConnectionSummary({
+  connected,
+  connectedAt,
+  durationMs,
+  host,
+}: {
+  connected: boolean;
+  connectedAt?: string | null;
+  durationMs?: number | null;
+  host?: string | null;
+}) {
+  const connectionTime = parseTimestamp(connectedAt);
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 1.25,
+        alignSelf: { xs: 'stretch', md: 'center' },
+        minWidth: { md: 260 },
+        maxWidth: { xs: '100%', md: 380 },
+        p: 1.25,
+        borderRadius: 1,
+        border: '1px solid',
+        borderColor: connected ? 'success.main' : 'divider',
+        bgcolor: (theme) =>
+          connected ? alpha(theme.palette.success.main, 0.08) : 'background.paper',
+      }}
+    >
+      <Box
+        sx={{
+          width: 10,
+          height: 10,
+          flexShrink: 0,
+          borderRadius: '50%',
+          bgcolor: connected ? 'success.main' : 'text.disabled',
+          boxShadow: (theme) =>
+            connected ? `0 0 0 4px ${alpha(theme.palette.success.main, 0.14)}` : 'none',
+        }}
+      />
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="subtitle2" color={connected ? 'success.main' : 'text.primary'}>
+          {connected ? 'Connected' : 'Not connected'}
+        </Typography>
+        <Typography variant="caption" color="text.secondary" component="div">
+          {connected ? (
+            <>
+              {connectionTime !== null
+                ? `Since ${formatDateTime(connectionTime)}`
+                : 'Connected now'}
+              {durationMs !== null && durationMs !== undefined
+                ? ` · ${formatDuration(durationMs)}`
+                : ''}
+            </>
+          ) : connectionTime !== null ? (
+            `Last connected ${formatDateTime(connectionTime)}`
+          ) : (
+            'SSH connection required'
+          )}
+        </Typography>
+        {connected && host ? (
+          <Typography variant="caption" color="text.secondary" display="block" noWrap title={host}>
+            {host}
+          </Typography>
+        ) : null}
+      </Box>
     </Box>
   );
 }

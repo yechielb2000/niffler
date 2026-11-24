@@ -1,21 +1,11 @@
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Paper,
-  Stack,
-  TextField,
-  Toolbar,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Chip, Paper, Stack, TextField, Toolbar, Typography } from '@mui/material';
 import { useMemo, useState } from 'react';
 
 import { AgentCard } from '../../components/agents/AgentCard';
 import { useAgents } from '../../hooks/agents/useAgents';
 
 export function AgentListPage() {
-  const { agents, health, loading, error, stats, refresh } = useAgents();
+  const { agents, loading, error, stats } = useAgents();
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
@@ -45,28 +35,12 @@ export function AgentListPage() {
             Review registered system metadata and recorded observations.
           </Typography>
         </Box>
-        <Button variant="contained" onClick={refresh}>
-          Refresh
-        </Button>
       </Toolbar>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <Paper sx={{ p: 2, flex: 1 }} variant="outlined">
-          <Typography variant="subtitle2">Backend health</Typography>
-          <Typography variant="h6">{health}</Typography>
-        </Paper>
-        <Paper sx={{ p: 2, flex: 1 }} variant="outlined">
-          <Typography variant="subtitle2">Total agents</Typography>
-          <Typography variant="h6">{stats.total}</Typography>
-        </Paper>
-        <Paper sx={{ p: 2, flex: 1 }} variant="outlined">
-          <Typography variant="subtitle2">Active</Typography>
-          <Typography variant="h6">{stats.active}</Typography>
-        </Paper>
-        <Paper sx={{ p: 2, flex: 1 }} variant="outlined">
-          <Typography variant="subtitle2">Inactive</Typography>
-          <Typography variant="h6">{stats.inactive}</Typography>
-        </Paper>
+        <AgentMetric label="Total agents" value={stats.total} tone="primary.main" />
+        <AgentMetric label="Active" value={stats.active} tone="success.main" />
+        <AgentMetric label="Inactive" value={stats.inactive} tone="warning.main" />
       </Stack>
 
       <Paper sx={{ p: 2, mb: 2 }} variant="outlined">
@@ -111,5 +85,31 @@ export function AgentListPage() {
         ))}
       </Box>
     </Box>
+  );
+}
+
+function AgentMetric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: 'primary.main' | 'success.main' | 'warning.main';
+}) {
+  return (
+    <Paper variant="outlined" sx={{ p: 1.25, flex: 1, minWidth: 0 }}>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Box sx={{ width: 3, height: 30, flexShrink: 0, borderRadius: 1, bgcolor: tone }} />
+        <Box sx={{ minWidth: 0 }}>
+          <Typography variant="caption" color="text.secondary">
+            {label}
+          </Typography>
+          <Typography variant="h5" sx={{ color: tone, lineHeight: 1.1 }}>
+            {value}
+          </Typography>
+        </Box>
+      </Stack>
+    </Paper>
   );
 }

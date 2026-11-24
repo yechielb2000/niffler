@@ -1,9 +1,10 @@
-import { Chip, Grid, Paper, Stack, Typography } from '@mui/material';
+import { Grid, Paper, Stack, Typography } from '@mui/material';
 import { z } from 'zod';
 
 import type { CollectedRecord } from '../types';
 import { asArray, asObject, recordPayload, sortNewest } from '../types';
 import { DataPanel, EmptyData, MetricCard } from '../shared/DataPanel';
+import { StatusBadge } from '../../shared/StatusBadge';
 
 const ServiceSchema = z
   .object({
@@ -55,10 +56,8 @@ export function ServicesDashboard({ records }: { records: CollectedRecord[] }) {
                       <Typography variant="body2" fontWeight={600} noWrap>
                         {service.name ?? 'Unnamed service'}
                       </Typography>
-                      <Chip
-                        size="small"
-                        color={service.active ? 'success' : 'default'}
-                        label={service.state ?? (service.active ? 'running' : 'stopped')}
+                      <StatusBadge
+                        status={service.state ?? (service.active ? 'running' : 'stopped')}
                       />
                     </Stack>
                     <Typography variant="caption" color="text.secondary">

@@ -1,7 +1,8 @@
-import { Box, Grid, LinearProgress, Stack, Typography } from '@mui/material';
+import { Box, Divider, Grid, LinearProgress, Stack, Typography, useTheme } from '@mui/material';
 import type { CollectedRecord, JsonObject } from '../types';
 import { asArray, asObject, recordPayload, sortNewest } from '../types';
 import { DataPanel, EmptyData, MetricCard } from '../shared/DataPanel';
+import { formatDateTime } from '../../../utils/datetime';
 
 export function DataOverview({
   records,
@@ -64,6 +65,16 @@ export function DataOverview({
   const capturedAt = telemetryRecords[0]?.collected_at;
   const cpuPercent = numberValue(cpu.usage_percent);
   const memoryPercent = numberValue(memory.usage_percent);
+  const interfaces = networkInterfaceNames(network);
+  const primaryAddress = addresses[0] ?? null;
+  const extraAddresses = addresses.slice(1);
+  const addressDetail =
+    detailText(
+      extraAddresses.length ? `+${extraAddresses.length} more` : null,
+      interfaces.length ? `${interfaces.length} interfaces` : null,
+    ) || 'No address details reported';
+  const usedMemory = numberValue(memory.used_gb);
+  const totalMemory = numberValue(memory.total_gb);
   const loadValues = [
     ['1 minute', load.one_minute],
     ['5 minutes', load.five_minutes],
@@ -75,77 +86,108 @@ export function DataOverview({
       <Grid item xs={12} sm={6} lg={3}>
         <MetricCard
           label="Hostname"
-          value={firstValue(info.hostname, hostname) ?? 'Not reported'}
+          value={firstValue(info.hostname, hostname) ?? '—'}
           detail={firstValue(info.distribution, info.os) ?? 'Operating system not reported'}
+          mono
         />
       </Grid>
       <Grid item xs={12} sm={6} lg={3}>
         <MetricCard
           label="Machine IP"
-          value={addresses.length ? addresses.join(', ') : 'Not reported'}
-          detail={networkInterfaceNames(network).join(', ') || 'Interfaces not reported'}
+          value={primaryAddress ?? '—'}
+          detail={addressDetail}
+          title={addresses.length ? `Addresses: ${addresses.join(' · ')}` : undefined}
+          mono
         />
       </Grid>
       <Grid item xs={12} sm={6} lg={3}>
         <MetricCard
           label="Host time"
-          value={localTime ?? 'Not reported'}
-          detail={`Timezone: ${display(timezone)}`}
+          value={localTime ?? '—'}
+          detail={timezone ? `Timezone · ${display(timezone)}` : 'Timezone not reported'}
+          mono={localTime != null}
         />
       </Grid>
       <Grid item xs={12} sm={6} lg={3}>
         <MetricCard
           label="Country / region"
-          value={country ?? 'Not reported'}
-          detail="Shown only when present in collected telemetry"
+          value={country ?? '—'}
+          detail={country ? 'Reported location' : 'Not in this snapshot'}
         />
       </Grid>
 
       <Grid item xs={12} sm={6} lg={3}>
         <MetricCard
           label="CPU usage"
-          value={cpuPercent == null ? 'Not reported' : `${cpuPercent}%`}
-          detail={`${display(cpu.cores)} cores · ${display(cpu.model)}`}
+          value={cpuPercent == null ? '—' : `${cpuPercent}%`}
+          detail={
+            detailText(
+              valueText(cpu.cores) ? `${display(cpu.cores)} cores` : null,
+              valueText(cpu.model),
+            ) || 'Core details not reported'
+          }
         />
       </Grid>
       <Grid item xs={12} sm={6} lg={3}>
         <MetricCard
           label="Memory usage"
-          value={memoryPercent == null ? 'Not reported' : `${memoryPercent}%`}
-          detail={`${display(memory.used_gb)} / ${display(memory.total_gb)} GB`}
+          value={memoryPercent == null ? '—' : `${memoryPercent}%`}
+          detail={
+            usedMemory != null && totalMemory != null
+              ? `${usedMemory} / ${totalMemory} GB in use`
+              : 'Capacity not reported'
+          }
         />
       </Grid>
       <Grid item xs={12} sm={6} lg={3}>
         <MetricCard
           label="Uptime"
-          value={display(asObject(current.uptime).human)}
-          detail={`Kernel: ${display(info.kernel)}`}
+          value={firstValue(asObject(current.uptime).human) ?? '—'}
+          detail={valueText(info.kernel) ? `Kernel ${display(info.kernel)}` : 'Kernel not reported'}
+          mono
         />
       </Grid>
       <Grid item xs={12} sm={6} lg={3}>
         <MetricCard
           label="Last telemetry"
-          value={formatTimestamp(capturedAt)}
-          detail="Capture timestamp from the latest telemetry snapshot"
+          value={formatDateTime(capturedAt)}
+          detail="Latest collected snapshot"
+          mono
         />
       </Grid>
 
       <Grid item xs={12} md={4}>
         <DataPanel title="Load average" subtitle="Reported host load">
-          <Stack direction="row" spacing={1}>
+          <Stack
+            direction="row"
+            spacing={2}
+            divider={<Divider orientation="vertical" flexItem />}
+            sx={{ pt: 0.25 }}
+          >
             {loadValues.map(([label, value]) => (
-              <MetricCard key={label} label={label} value={display(value)} />
+              <Box key={label} sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ textTransform: 'uppercase', letterSpacing: '.08em' }}
+                >
+                  {label}
+                </Typography>
+                <Typography variant="h5" sx={{ mt: 0.25, fontSize: 20, fontWeight: 600 }}>
+                  {display(value)}
+                </Typography>
+              </Box>
             ))}
           </Stack>
         </DataPanel>
       </Grid>
       <Grid item xs={12} md={4}>
-        <DataPanel title="CPU history" subtitle="Recent system snapshots">
+        <DataPanel title="CPU history" subtitle="Last 12 snapshots">
           <TelemetryTrend records={systemHistory} field="cpu" valueKey="usage_percent" />
         </DataPanel>
       </Grid>
       <Grid item xs={12} md={4}>
-        <DataPanel title="Memory history" subtitle="Recent system snapshots">
+        <DataPanel title="Memory history" subtitle="Last 12 snapshots">
           <TelemetryTrend records={systemHistory} field="memory" valueKey="usage_percent" />
         </DataPanel>
       </Grid>
@@ -162,6 +204,7 @@ function TelemetryTrend({
   field: string;
   valueKey: string;
 }) {
+  const theme = useTheme();
   const values = records
     .slice(0, 12)
     .reverse()
@@ -171,14 +214,10 @@ function TelemetryTrend({
   if (values.length === 1)
     return (
       <Box>
-        <Typography variant="h4" fontWeight={700}>
+        <Typography variant="h5" sx={{ fontSize: 20, fontWeight: 600 }}>
           {values[0]}%
         </Typography>
-        <LinearProgress
-          variant="determinate"
-          value={clamp(values[0])}
-          sx={{ mt: 1, height: 8, borderRadius: 8 }}
-        />
+        <LinearProgress variant="determinate" value={clamp(values[0])} sx={{ mt: 1 }} />
         <Typography variant="caption" color="text.secondary">
           One snapshot available
         </Typography>
@@ -204,21 +243,25 @@ function TelemetryTrend({
         <polyline
           points={points}
           fill="none"
-          stroke="#38bdf8"
+          stroke={theme.palette.primary.main}
           strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         {points.split(' ').map((point, index) => {
           const [cx, cy] = point.split(',');
-          return <circle key={index} cx={cx} cy={cy} r="3.5" fill="#38bdf8" />;
+          return (
+            <circle key={index} cx={cx} cy={cy} r="3.5" fill={theme.palette.primary.main}>
+              <title>{values[index]}% usage</title>
+            </circle>
+          );
         })}
       </svg>
       <Stack direction="row" justifyContent="space-between">
         <Typography variant="caption" color="text.secondary">
           {values[0]}%
         </Typography>
-        <Typography variant="caption" fontWeight={700}>
+        <Typography variant="caption" fontWeight={600}>
           {values[values.length - 1]}%
         </Typography>
       </Stack>
@@ -240,17 +283,19 @@ function hasNetworkInfo(payload: JsonObject): boolean {
 
 function networkAddresses(payload: JsonObject): string[] {
   const interfaces = asObject(payload.details);
-  const addresses = Object.values(interfaces).flatMap((value) => {
+  const fromInterfaces = Object.values(interfaces).flatMap((value) => {
     const info = asObject(value);
     return toStringArray(info.addresses ?? info.address ?? info.ip_addresses);
   });
-  return [
-    ...new Set(
-      [...addresses, ...toStringArray(payload.ip_list)].filter(
-        (address) => !address.startsWith('127.') && !address.startsWith('::1'),
-      ),
-    ),
-  ].slice(0, 4);
+  const seen = new Set<string>();
+  return [...fromInterfaces, ...toStringArray(payload.ip_list)]
+    .filter((address) => {
+      const base = address.split('/')[0].trim().toLowerCase();
+      if (!base || base.startsWith('127.') || base === '::1' || seen.has(base)) return false;
+      seen.add(base);
+      return true;
+    })
+    .slice(0, 4);
 }
 
 function networkInterfaceNames(payload: JsonObject): string[] {
@@ -271,10 +316,13 @@ function isTelemetryRecord(record: CollectedRecord): boolean {
   );
 }
 
-function formatTimestamp(value: string | null | undefined): string {
-  if (!value) return 'Not reported';
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+function detailText(...parts: Array<string | null | undefined>): string {
+  return parts.filter((part): part is string => Boolean(part)).join(' · ');
+}
+
+function valueText(value: unknown): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  return display(value);
 }
 
 function toStringArray(value: unknown): string[] {
@@ -296,7 +344,7 @@ function firstValue(...values: unknown[]): string | null {
 }
 
 function display(value: unknown): string {
-  if (value === null || value === undefined || value === '') return 'Not reported';
+  if (value === null || value === undefined || value === '') return '—';
   if (typeof value === 'object') {
     const object = asObject(value);
     return display(object.name ?? object.timezone ?? object.offset ?? object.value);

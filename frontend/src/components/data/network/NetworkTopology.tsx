@@ -47,9 +47,7 @@ export function NetworkTopology({
         sx={{ mb: 2 }}
       >
         <Box>
-          <Typography variant="subtitle1" fontWeight={700}>
-            Logical network map
-          </Typography>
+          <Typography variant="subtitle1">Logical network map</Typography>
           <Typography variant="caption" color="text.secondary">
             Links reflect collected addresses, routes, and neighbor records. A physical switch is
             shown only when reported.
@@ -76,7 +74,11 @@ export function NetworkTopology({
         <LinkLine />
         <NodeCard
           icon={
-            switchName ? <HubOutlinedIcon color="secondary" /> : <LanOutlinedIcon color="info" />
+            switchName ? (
+              <HubOutlinedIcon sx={{ color: 'text.secondary' }} />
+            ) : (
+              <LanOutlinedIcon sx={{ color: 'text.secondary' }} />
+            )
           }
           title={switchName || subnet || 'LAN segment'}
           subtitle={switchName ? 'Reported network device' : 'Logical subnet'}
@@ -97,7 +99,7 @@ export function NetworkTopology({
                   compact
                   icon={
                     node.kind?.toLowerCase().includes('gateway') ? (
-                      <RouterOutlinedIcon color="warning" />
+                      <RouterOutlinedIcon sx={{ color: 'text.secondary' }} />
                     ) : (
                       <ComputerOutlinedIcon color="action" />
                     )
@@ -175,7 +177,7 @@ function NodeCard({
       <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
         {icon}
         <Box sx={{ minWidth: 0 }}>
-          <Typography variant={compact ? 'body2' : 'subtitle2'} fontWeight={700} noWrap>
+          <Typography variant={compact ? 'body2' : 'subtitle2'} noWrap>
             {title}
           </Typography>
           <Typography variant="caption" color="text.secondary" noWrap>

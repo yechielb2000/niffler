@@ -20,7 +20,21 @@ class ConnectionStatus(BaseModel):
     host: str | None = None
     port: int | None = None
     username: str | None = None
+    connected_at: str | None = None
     system: HostInfo | None = None
+
+
+class ConnectionAttemptRecord(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    attempted_at: str
+    succeeded: bool
+    reason: str | None = None
+
+
+class ConnectionAttemptList(BaseModel):
+    attempts: list[ConnectionAttemptRecord]
 
 
 class ConnectionResult(BaseModel):

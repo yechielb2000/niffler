@@ -8,7 +8,7 @@ from typing import Any
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 
-from backend.models import Agent, Base, CollectedData, Task, Workflow
+from backend.models import Agent, Base, CollectedData, ConnectionAttempt, Task, Workflow
 
 
 def resolve_fixture_path(fixture_path: str | Path | None = None) -> Path:
@@ -62,6 +62,7 @@ def seed_mock_data(
         with engine.begin() as connection:
             for table in [
                 CollectedData.__tablename__,
+                ConnectionAttempt.__tablename__,
                 Task.__tablename__,
                 Workflow.__tablename__,
                 Agent.__tablename__,
@@ -74,6 +75,7 @@ def seed_mock_data(
         created_tasks = 0
         created_workflows = 0
         created_data = 0
+        created_attempts = 0
 
         for agent_payload in agents_payload:
             agent_id = str(agent_payload["agent_id"])
@@ -243,6 +245,86 @@ def seed_mock_data(
                                 },
                             },
                             "ip_list": [f"10.0.{offset}.12", "2001:db8::12"],
+                            "neighbors": [
+                                {
+                                    "ip": f"10.0.{offset}.1",
+                                    "hostname": "gateway.demo.local",
+                                    "mac": f"02:42:ac:11:00:{offset + 1:02x}",
+                                    "interface": "eth0",
+                                    "state": "REACHABLE",
+                                }
+                            ],
+                            "routes": [
+                                {
+                                    "destination": "0.0.0.0/0",
+                                    "gateway": f"10.0.{offset}.1",
+                                    "interface": "eth0",
+                                    "metric": 100,
+                                },
+                                {
+                                    "destination": f"10.0.{offset}.0/24",
+                                    "gateway": "—",
+                                    "interface": "eth0",
+                                    "metric": 0,
+                                },
+                            ],
+                            "firewall": {
+                                "policies": {
+                                    "INPUT": "DROP",
+                                    "FORWARD": "DROP",
+                                    "OUTPUT": "ACCEPT",
+                                },
+                                "rules": [
+                                    {
+                                        "chain": "INPUT",
+                                        "target": "ACCEPT",
+                                        "protocol": "tcp",
+                                        "source": "0.0.0.0/0",
+                                        "destination": "0.0.0.0/0",
+                                        "ports": "22",
+                                    },
+                                    {
+                                        "chain": "INPUT",
+                                        "target": "ACCEPT",
+                                        "protocol": "tcp",
+                                        "source": "10.0.0.0/8",
+                                        "destination": "0.0.0.0/0",
+                                        "ports": "443",
+                                    },
+                                ],
+                            },
+                            "listeners": [
+                                {
+                                    "protocol": "tcp",
+                                    "local_address": "0.0.0.0",
+                                    "port": 22,
+                                    "process": "sshd",
+                                    "state": "LISTEN",
+                                    "remote_address": "—",
+                                },
+                                {
+                                    "protocol": "tcp",
+                                    "local_address": "0.0.0.0",
+                                    "port": 443,
+                                    "process": "nginx",
+                                    "state": "LISTEN",
+                                    "remote_address": "—",
+                                },
+                            ],
+                            "dns": {
+                                "resolver": {
+                                    "nameservers": ["1.1.1.1", "8.8.8.8"],
+                                    "search_domains": ["demo.local", "svc.demo.local"],
+                                },
+                                "hosts": f"127.0.0.1 localhost\n10.0.{offset}.12 {host}",
+                            },
+                            "dhcp": {
+                                "server": f"10.0.{offset}.1",
+                                "ip": f"10.0.{offset}.12",
+                                "gateway": f"10.0.{offset}.1",
+                                "lease_expires": "12 hours",
+                                "dns": "1.1.1.1, 8.8.8.8",
+                            },
                         },
                     ),
                     (
@@ -460,6 +542,99 @@ def seed_mock_data(
                             ],
                         },
                     ),
+                    (
+                        "packages",
+                        "Installed packages",
+                        {
+                            "packages": [
+                                {
+                                    "name": "nginx",
+                                    "version": "1.24.0-2ubuntu7.3",
+                                    "architecture": "amd64",
+                                    "manager": "apt",
+                                    "status": "installed",
+                                    "description": "High-performance web server",
+                                },
+                                {
+                                    "name": "openssh-server",
+                                    "version": "1:9.6p1-3ubuntu13.8",
+                                    "architecture": "amd64",
+                                    "manager": "apt",
+                                    "status": "security update available",
+                                    "description": "Secure shell server",
+                                },
+                                {
+                                    "name": "postgresql-16",
+                                    "version": "16.3-0ubuntu0.24.04.1",
+                                    "architecture": "amd64",
+                                    "manager": "apt",
+                                    "status": "installed",
+                                    "description": "PostgreSQL database server",
+                                },
+                                {
+                                    "name": "containerd.io",
+                                    "version": "1.7.24",
+                                    "architecture": "amd64",
+                                    "manager": "apt",
+                                    "status": "installed",
+                                    "description": "Container runtime",
+                                },
+                            ]
+                        },
+                    ),
+                    (
+                        "configuration",
+                        "Configuration snapshots",
+                        {
+                            "files": [
+                                {
+                                    "path": "/etc/ssh/sshd_config",
+                                    "format": "OpenSSH",
+                                    "owner": "root",
+                                    "mode": "0600",
+                                    "modified": "2026-06-18T09:42:00Z",
+                                    "status": "verified",
+                                    "settings": {
+                                        "PermitRootLogin": "no",
+                                        "PasswordAuthentication": "no",
+                                    },
+                                },
+                                {
+                                    "path": "/etc/nginx/nginx.conf",
+                                    "format": "nginx",
+                                    "owner": "root",
+                                    "mode": "0644",
+                                    "modified": "2026-06-20T14:10:00Z",
+                                    "status": "changed",
+                                    "settings": {"worker_processes": "auto"},
+                                },
+                            ],
+                            "settings": {
+                                "API_TOKEN": "demo-redacted-value",
+                                "APP_ENV": "production",
+                            },
+                        },
+                    ),
+                    (
+                        "location",
+                        "Location history",
+                        {
+                            "latitude": 52.52,
+                            "longitude": 13.405,
+                            "label": "Demo datacenter",
+                        },
+                    ),
+                    (
+                        "host-inventory",
+                        "Additional host inventory",
+                        {
+                            "role": "Application server",
+                            "virtualization": "KVM",
+                            "cloud_region": "eu-central-1",
+                            "environment": "demo",
+                            "tags": ["web", "production-like", "demo"],
+                        },
+                    ),
                 ]
                 generated_payloads = [
                     {
@@ -467,13 +642,48 @@ def seed_mock_data(
                         "workflow_id": workflow_payloads[0]["workflow_id"],
                         "data_type": kind,
                         "schema_version": 1,
-                        "payload": payload,
+                        "payload": (
+                            {
+                                **payload,
+                                "latitude": round(payload["latitude"] + days * 0.0007, 5),
+                                "longitude": round(payload["longitude"] + days * 0.0009, 5),
+                            }
+                            if kind == "location"
+                            else payload
+                        ),
                         "collected_at": (collected_time - timedelta(days=days)).isoformat(),
                     }
                     for days in (0, 2, 7, 15, 30, 60, 90, 120, 179)
                     for kind, label, payload in generated
                 ]
                 data_payloads = generated_payloads
+
+                failure_reasons = [
+                    "Connection timed out after 10 seconds",
+                    "Permission denied (publickey)",
+                    "No route to host",
+                    "Authentication failed for user inventory-demo",
+                    "SSH handshake failed",
+                ]
+                for index, days in enumerate((1, 12, 45, 97, 160)):
+                    attempted_at = (collected_time - timedelta(days=days)).isoformat()
+                    reason = failure_reasons[(offset + index) % len(failure_reasons)]
+                    existing_attempt = (
+                        session.query(ConnectionAttempt)
+                        .filter_by(agent_id=agent_id, attempted_at=attempted_at, reason=reason)
+                        .first()
+                    )
+                    if existing_attempt is None:
+                        session.add(
+                            ConnectionAttempt(
+                                agent_id=agent_id,
+                                attempted_at=attempted_at,
+                                succeeded=False,
+                                reason=reason,
+                            )
+                        )
+                        created_attempts += 1
+
             for data_payload in data_payloads:
                 collected_at = data_payload.get("collected_at")
                 existing_data = (
@@ -511,6 +721,7 @@ def seed_mock_data(
         "tasks": created_tasks,
         "workflows": created_workflows,
         "collected_data": created_data,
+        "connection_attempts": created_attempts,
     }
 
 

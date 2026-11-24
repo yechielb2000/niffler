@@ -13,7 +13,7 @@ import {
 
 interface Props {
   open: boolean;
-  saved?: { host?: string; port?: number; username?: string };
+  saved?: { host?: string | null; port?: number | null; username?: string | null };
   onClose: () => void;
   onConnect: (details: {
     host: string;

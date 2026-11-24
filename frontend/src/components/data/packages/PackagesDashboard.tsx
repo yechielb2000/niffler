@@ -1,18 +1,10 @@
-import {
-  Chip,
-  Grid,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  TextField,
-} from '@mui/material';
+import { Grid, Table, TableBody, TableCell, TableHead, TableRow, TextField } from '@mui/material';
 import { useMemo, useState } from 'react';
 
 import type { CollectedRecord } from '../types';
 import { recordPayload } from '../types';
 import { DataPanel, EmptyData, MetricCard } from '../shared/DataPanel';
+import { StatusBadge } from '../../shared/StatusBadge';
 import { PackagesPayloadSchema, type PackageRow } from './schema';
 
 export function PackagesDashboard({ records }: { records: CollectedRecord[] }) {
@@ -94,7 +86,7 @@ export function PackagesDashboard({ records }: { records: CollectedRecord[] }) {
                       <TableCell>{item.architecture ?? item.arch ?? '—'}</TableCell>
                       <TableCell>{item.manager ?? item.source ?? '—'}</TableCell>
                       <TableCell>
-                        {item.status ? <Chip size="small" label={item.status} /> : '—'}
+                        {item.status ? <StatusBadge status={item.status} /> : '—'}
                       </TableCell>
                     </TableRow>
                   ))}

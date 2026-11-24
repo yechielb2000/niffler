@@ -1,6 +1,6 @@
 from typing import Any
 
-from sqlalchemy import JSON, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -44,6 +44,16 @@ class SSHConnection(Base):
     username: Mapped[str] = mapped_column(String, nullable=False)
     credential_ref: Mapped[str | None] = mapped_column(String, nullable=True)
     connected_at: Mapped[str | None] = mapped_column(String, nullable=True)
+
+
+class ConnectionAttempt(Base):
+    __tablename__ = "connection_attempts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    agent_id: Mapped[str] = mapped_column(String, nullable=False, index=True)
+    attempted_at: Mapped[str] = mapped_column(String, nullable=False)
+    succeeded: Mapped[bool] = mapped_column(Boolean, default=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class Workflow(Base):

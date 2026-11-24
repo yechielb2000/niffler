@@ -1,4 +1,4 @@
-import { Box, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography, useTheme } from '@mui/material';
 import 'leaflet/dist/leaflet.css';
 import { useMemo } from 'react';
 import { MapContainer, Marker, Polyline, Popup, TileLayer } from 'react-leaflet';
@@ -81,6 +81,7 @@ const markerIcon = new L.Icon({
 });
 
 export function LocationHistoryMap({ records }: { records: CollectedRecord[] }) {
+  const theme = useTheme();
   const points = useMemo(() => {
     return (records ?? [])
       .map(parsePoint)
@@ -97,7 +98,7 @@ export function LocationHistoryMap({ records }: { records: CollectedRecord[] }) 
 
   return (
     <Stack spacing={2}>
-      <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, overflow: 'hidden' }}>
+      <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
         <MapContainer
           center={[center.latitude, center.longitude]}
           zoom={12}
@@ -110,7 +111,7 @@ export function LocationHistoryMap({ records }: { records: CollectedRecord[] }) 
           {latLngs.length > 1 ? (
             <Polyline
               positions={latLngs}
-              pathOptions={{ color: '#2563eb', weight: 3, opacity: 0.8 }}
+              pathOptions={{ color: theme.palette.primary.main, weight: 3, opacity: 0.8 }}
             />
           ) : null}
           {points.map((point, index) => (

@@ -1,30 +1,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { getAgent, getHealth, listAgents } from '../../api';
+import { getAgent, listAgents } from '../../api';
 import type { Agent, Task } from '../../api';
 import type { CollectedRecord } from '../../components/data/types';
 
 export function useAgents() {
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [health, setHealth] = useState('unknown');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const load = useCallback(() => {
-    Promise.all([listAgents(), getHealth()])
-      .then(([agentsData, healthData]) => {
+    listAgents()
+      .then((agentsData) => {
         setAgents(agentsData.agents ?? []);
-        setHealth(healthData.status ?? 'ok');
         setError('');
       })
-      .catch(() => setError('Unable to fetch agents or health status'))
+      .catch(() => setError('Unable to fetch agents'))
       .finally(() => setLoading(false));
   }, []);
-
-  const refresh = useCallback(() => {
-    setLoading(true);
-    load();
-  }, [load]);
 
   useEffect(() => {
     void Promise.resolve().then(load);
@@ -39,7 +32,7 @@ export function useAgents() {
     [agents],
   );
 
-  return { agents, health, loading, error, stats, refresh };
+  return { agents, loading, error, stats };
 }
 
 export function useAgentDetails(agentId?: string) {
